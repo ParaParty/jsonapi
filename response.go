@@ -51,17 +51,16 @@ var (
 // Many Example: you could pass it, w, your http.ResponseWriter, and, models, a
 // slice of Blog struct instance pointers to be written to the response body:
 //
-//	 func ListBlogs(w http.ResponseWriter, r *http.Request) {
-//     blogs := []*Blog{}
+//		 func ListBlogs(w http.ResponseWriter, r *http.Request) {
+//	    blogs := []*Blog{}
 //
-//		 w.Header().Set("Content-Type", jsonapi.MediaType)
-//		 w.WriteHeader(http.StatusOK)
+//			 w.Header().Set("Content-Type", jsonapi.MediaType)
+//			 w.WriteHeader(http.StatusOK)
 //
-//		 if err := jsonapi.MarshalPayload(w, blogs); err != nil {
-//			 http.Error(w, err.Error(), http.StatusInternalServerError)
+//			 if err := jsonapi.MarshalPayload(w, blogs); err != nil {
+//				 http.Error(w, err.Error(), http.StatusInternalServerError)
+//			 }
 //		 }
-//	 }
-//
 func MarshalPayload(w io.Writer, models interface{}) error {
 	payload, err := Marshal(models)
 	if err != nil {
@@ -111,6 +110,15 @@ func Marshal(models interface{}) (Payloader, error) {
 	}
 }
 
+func MarshalWithoutIncluded(models interface{}) (Payloader, error) {
+	payload, err := Marshal(models)
+	if err != nil {
+		return nil, err
+	}
+	payload.clearIncluded()
+	return payload, nil
+}
+
 // MarshalPayloadWithoutIncluded writes a jsonapi response with one or many
 // records, without the related records sideloaded into "included" array.
 // If you want to serialize the relations into the "included" array see
@@ -119,12 +127,10 @@ func Marshal(models interface{}) (Payloader, error) {
 // models interface{} should be either a struct pointer or a slice of struct
 // pointers.
 func MarshalPayloadWithoutIncluded(w io.Writer, model interface{}) error {
-	payload, err := Marshal(model)
+	payload, err := MarshalWithoutIncluded(model)
 	if err != nil {
 		return err
 	}
-	payload.clearIncluded()
-
 	return json.NewEncoder(w).Encode(payload)
 }
 
