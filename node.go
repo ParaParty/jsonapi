@@ -4,7 +4,7 @@ import "fmt"
 
 // Payloader is used to encapsulate the One and Many payload types
 type Payloader interface {
-	clearIncluded()
+	clearIncluded(...string)
 }
 
 // OnePayload is used to represent a generic JSON API payload where a single
@@ -16,8 +16,20 @@ type OnePayload struct {
 	Meta     *Meta   `json:"meta,omitempty"`
 }
 
-func (p *OnePayload) clearIncluded() {
-	p.Included = []*Node{}
+func (p *OnePayload) clearIncluded(notClearType ...string) {
+	if len(notClearType) == 0 {
+		p.Included = []*Node{}
+		return
+	}
+	var included []*Node
+	for _, node := range p.Included {
+		for _, s := range notClearType {
+			if node.Type == s {
+				included = append(included, node)
+			}
+		}
+	}
+	p.Included = included
 }
 
 // ManyPayload is used to represent a generic JSON API payload where many
@@ -29,8 +41,20 @@ type ManyPayload struct {
 	Meta     *Meta   `json:"meta,omitempty"`
 }
 
-func (p *ManyPayload) clearIncluded() {
-	p.Included = []*Node{}
+func (p *ManyPayload) clearIncluded(notClearType ...string) {
+	if len(notClearType) == 0 {
+		p.Included = []*Node{}
+		return
+	}
+	var included []*Node
+	for _, node := range p.Included {
+		for _, s := range notClearType {
+			if node.Type == s {
+				included = append(included, node)
+			}
+		}
+	}
+	p.Included = included
 }
 
 // Node is used to represent a generic JSON API Resource

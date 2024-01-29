@@ -110,12 +110,12 @@ func Marshal(models interface{}) (Payloader, error) {
 	}
 }
 
-func MarshalWithoutIncluded(models interface{}) (Payloader, error) {
+func MarshalWithoutIncluded(models interface{}, notClearType ...string) (Payloader, error) {
 	payload, err := Marshal(models)
 	if err != nil {
 		return nil, err
 	}
-	payload.clearIncluded()
+	payload.clearIncluded(notClearType...)
 	return payload, nil
 }
 
