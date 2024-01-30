@@ -801,6 +801,44 @@ func TestUnmarshalManyPayload(t *testing.T) {
 	}
 }
 
+func TestUnmarshalManyPayloadGeneric(t *testing.T) {
+	sample := map[string]interface{}{
+		"data": []interface{}{
+			map[string]interface{}{
+				"type": "posts",
+				"id":   "1",
+				"attributes": map[string]interface{}{
+					"body":  "First",
+					"title": "Post",
+				},
+			},
+			map[string]interface{}{
+				"type": "posts",
+				"id":   "2",
+				"attributes": map[string]interface{}{
+					"body":  "Second",
+					"title": "Post",
+				},
+			},
+		},
+	}
+
+	data, err := json.Marshal(sample)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := bytes.NewReader(data)
+
+	posts, err := UnmarshalManyPayloadGeneric[Post](in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(posts) != 2 {
+		t.Fatal("Wrong number of posts")
+	}
+}
+
 func TestManyPayload_withLinks(t *testing.T) {
 	firstPageURL := "http://somesite.com/movies?page[limit]=50&page[offset]=50"
 	prevPageURL := "http://somesite.com/movies?page[limit]=50&page[offset]=0"

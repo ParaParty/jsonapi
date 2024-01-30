@@ -70,24 +70,23 @@ func newErrUnsupportedPtrType(rf reflect.Value, t reflect.Type, structField refl
 // For example you could pass it, in, req.Body and, model, a BlogPost
 // struct instance to populate in an http handler,
 //
-//   func CreateBlog(w http.ResponseWriter, r *http.Request) {
-//   	blog := new(Blog)
+//	func CreateBlog(w http.ResponseWriter, r *http.Request) {
+//		blog := new(Blog)
 //
-//   	if err := jsonapi.UnmarshalPayload(r.Body, blog); err != nil {
-//   		http.Error(w, err.Error(), 500)
-//   		return
-//   	}
+//		if err := jsonapi.UnmarshalPayload(r.Body, blog); err != nil {
+//			http.Error(w, err.Error(), 500)
+//			return
+//		}
 //
-//   	// ...do stuff with your blog...
+//		// ...do stuff with your blog...
 //
-//   	w.Header().Set("Content-Type", jsonapi.MediaType)
-//   	w.WriteHeader(201)
+//		w.Header().Set("Content-Type", jsonapi.MediaType)
+//		w.WriteHeader(201)
 //
-//   	if err := jsonapi.MarshalPayload(w, blog); err != nil {
-//   		http.Error(w, err.Error(), 500)
-//   	}
-//   }
-//
+//		if err := jsonapi.MarshalPayload(w, blog); err != nil {
+//			http.Error(w, err.Error(), 500)
+//		}
+//	}
 //
 // Visit https://github.com/google/jsonapi#create for more info.
 //
@@ -137,6 +136,38 @@ func UnmarshalManyPayload(in io.Reader, t reflect.Type) ([]interface{}, error) {
 			return nil, err
 		}
 		models = append(models, model.Interface())
+	}
+
+	return models, nil
+}
+
+// UnmarshalManyPayloadGeneric converts an io into a set of struct instances using
+// jsonapi tags on the type's struct fields.
+func UnmarshalManyPayloadGeneric[T any](in io.Reader) ([]*T, error) {
+	payload := new(ManyPayload)
+
+	if err := json.NewDecoder(in).Decode(payload); err != nil {
+		return nil, err
+	}
+
+	var models []*T                   // will be populated from the "data"
+	includedMap := map[string]*Node{} // will be populate from the "included"
+
+	if payload.Included != nil {
+		for _, included := range payload.Included {
+			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
+			includedMap[key] = included
+		}
+	}
+
+	for _, data := range payload.Data {
+		model := new(T)
+		reflectModel := reflect.ValueOf(model)
+		err := unmarshalNode(data, reflectModel, &includedMap)
+		if err != nil {
+			return nil, err
+		}
+		models = append(models, model)
 	}
 
 	return models, nil
